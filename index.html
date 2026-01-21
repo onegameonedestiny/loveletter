@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🌙 月老信箱 - 浪漫進階版</title>
-    <!-- 引入 Tailwind CSS -->
+    <title>🌙 月老信箱 </title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -17,44 +16,27 @@
             90% { opacity: 1; }
             100% { left: 110%; opacity: 0; transform: translateY(0) scale(0.5) rotate(-10deg); }
         }
-        .heart-flight {
-            position: absolute;
-            animation: flyHeart 2s linear infinite;
-            pointer-events: none;
-        }
+        .heart-flight { position: absolute; animation: flyHeart 2s linear infinite; pointer-events: none; }
         .animate-fade-in { animation: fadeIn 0.3s ease-out; }
+        .animate-pop { animation: pop 0.4s cubic-bezier(0.26, 0.53, 0.74, 1.48); }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes pop { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
         
+        .bg-romantic { background: radial-gradient(ellipse at top, #4c0519, #1e1b4b, #000000); }
         .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-
-        .bg-romantic {
-            background: radial-gradient(ellipse at top, #3b0764, #020617, #000000);
-        }
+        
+        body { font-size: 18px; }
+        select, input { font-size: 18px !important; }
     </style>
 </head>
-<body class="bg-romantic min-h-screen">
+<body class="bg-romantic min-h-screen font-sans selection:bg-pink-500/30">
     <div id="root"></div>
 
     <script type="text/babel">
         const { useState, useEffect, useMemo } = React;
 
-        // --- 內建圖標組件 (解決外部庫載入錯誤) ---
         const Icon = ({ children, size = 24, className = "" }) => (
-            <svg 
-                xmlns="http://www.w3.org/2000/svg" 
-                width={size} 
-                height={size} 
-                viewBox="0 0 24 24" 
-                fill="none" 
-                stroke="currentColor" 
-                strokeWidth="2" 
-                strokeLinecap="round" 
-                strokeLinejoin="round" 
-                className={className}
-            >
-                {children}
-            </svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>{children}</svg>
         );
 
         const Icons = {
@@ -65,14 +47,14 @@
             Heart: (props) => <Icon {...props}><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></Icon>,
             RefreshCw: (props) => <Icon {...props}><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></Icon>,
             LogIn: (props) => <Icon {...props}><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" x2="3" y1="12" y2="12"/></Icon>,
-            AlertCircle: (props) => <Icon {...props}><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></Icon>,
             CheckCircle: (props) => <Icon {...props}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></Icon>,
             Users: (props) => <Icon {...props}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><circle cx="19" cy="4" r="3"/></Icon>,
-            Cat: (props) => <Icon {...props}><path d="M12 5c.67 0 1.35.09 2 .26 1.78-2 5.03-2.84 6.42-2.45.44 2.19-.76 3.83-1.35 4.49.33.46.56 1 .7 1.56.09.3.13.6.13.91 0 2.3-3.6 3.09-5.9 4.44-2.3 1.35-4 3.3-4 5.8"/><path d="M12 5c-.67 0-1.35.09-2 .26-1.78-2-5.03-2.84-6.42-2.45-.44 2.19.76 3.83 1.35 4.49-.33.46-.56 1-.7 1.56-.09.3-.13.6-.13.91 0 2.3 3.6 3.09 5.9 4.44 2.3 1.35 4 3.3 4 5.8"/><circle cx="9" cy="11" r="1"/><circle cx="15" cy="11" r="1"/><path d="M12 13v2"/></Icon>,
+            Cat: (props) => <Icon {...props}><path d="M12 5c.67 0 1.35.09 2 .26-1.78-2-5.03-2.84-6.42-2.45-.44 2.19.76 3.83 1.35 4.49-.33.46.56 1-.7 1.56-.09.3-.13.6-.13.91 0 2.3-3.6 3.09-5.9 4.44-2.3 1.35-4 3.3-4 5.8"/><circle cx="9" cy="11" r="1"/><circle cx="15" cy="11" r="1"/><path d="M12 13v2"/></Icon>,
             X: (props) => <Icon {...props}><path d="M18 6 6 18"/><path d="m6 6 12 12"/></Icon>,
             ChevronRight: (props) => <Icon {...props}><path d="m9 18 6-6-6-6"/></Icon>,
             WifiOff: (props) => <Icon {...props}><line x1="2" x2="22" y1="2" y2="22"/><path d="M8.5 8.5a5 5 0 0 1 7 7"/><path d="M2 8.5a15 15 0 0 1 15.5-1.5"/><path d="M10.66 5c1.1.37 2.16.88 3.12 1.5"/><path d="M1.2 12a10 10 0 0 1 13.1-3.2"/></Icon>,
-            Sparkles: (props) => <Icon {...props}><path d="m12 3 1.912 5.813a2 2 0 0 0 1.275 1.275L21 12l-5.813 1.912a2 2 0 0 0-1.275 1.275L12 21l-1.912-5.813a2 2 0 0 0-1.275-1.275L3 12l5.813-1.912a2 2 0 0 0 1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></Icon>
+            Sparkles: (props) => <Icon {...props}><path d="m12 3 1.912 5.813a2 2 0 0 0 1.275 1.275L21 12l-5.813 1.912a2 2 0 0 0-1.275 1.275L12 21l-1.912-5.813a2 2 0 0 0-1.275-1.275L3 12l5.813-1.912a2 2 0 0 0 1.275-1.275L12 3Z"/></Icon>,
+            Lock: (props) => <Icon {...props}><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></Icon>
         };
 
         const GAS_URL = "https://script.google.com/macros/s/AKfycbxy-gnJHmXgei_k68l0wN15wzaOyel6ya4LhsPj3i3yrtGgY3BsCqJ5YLBzaOn6olOV/exec";
@@ -81,6 +63,7 @@
             const [user, setUser] = useState({ id: "", stage: "1" });
             const [isLoggedIn, setIsLoggedIn] = useState(false);
             const [loading, setLoading] = useState(false);
+            const [isSubmitting, setIsSubmitting] = useState(false); // 新增：發送狀態，用來鎖定介面
             const [data, setData] = useState(null);
             const [notification, setNotification] = useState(null);
             const [connectionError, setConnectionError] = useState(false);
@@ -94,328 +77,293 @@
 
             const fetchData = async (userId, stage) => {
                 try {
-                    const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 15000);
-
-                    const response = await fetch(`${GAS_URL}?userID=${userId}&stage=${stage}`, {
-                        signal: controller.signal
-                    });
-                    
-                    clearTimeout(timeoutId);
-                    if (!response.ok) throw new Error("網路請求失敗");
-
+                    const response = await fetch(`${GAS_URL}?userID=${userId}&stage=${stage}&t=${Date.now()}`);
                     const result = await response.json();
                     if (result.error) throw new Error(result.error);
-                    
                     setData(result);
                     setIsLoggedIn(true);
                     setConnectionError(false);
                 } catch (err) {
-                    console.error("Fetch failed:", err);
                     setConnectionError(true);
                 } finally {
                     setLoading(false);
+                    setIsSubmitting(false);
                 }
             };
 
-            // 自動登入
             useEffect(() => {
                 const params = new URLSearchParams(window.location.search);
                 const urlID = params.get('userID') || params.get('id');
-                const urlStage = params.get('stage');
-
+                const urlStage = params.get('stage') || "1";
                 if (urlID) {
-                    const targetStage = urlStage || "1";
-                    setUser({ id: urlID, stage: targetStage });
+                    setUser({ id: urlID, stage: urlStage });
                     setLoading(true);
-                    fetchData(urlID, targetStage);
+                    fetchData(urlID, urlStage);
                 }
             }, []);
 
-            // 新信通知邏輯
             useEffect(() => {
                 if (data && data.inbox && user.id) {
                     const storageKey = `moon_last_count_${user.id}`;
                     const lastCount = parseInt(localStorage.getItem(storageKey) || '0', 10);
                     const currentCount = data.inbox.length;
-
-                    if (currentCount > lastCount) {
-                        setNewMailCount(currentCount - lastCount);
-                    } else {
-                        setNewMailCount(0);
-                    }
+                    if (currentCount > lastCount) setNewMailCount(currentCount - lastCount);
+                    else setNewMailCount(0);
                 }
             }, [data, user.id]);
 
             const handleOpenInbox = () => {
                 setShowInbox(true);
                 if (data && data.inbox && user.id) {
-                    const storageKey = `moon_last_count_${user.id}`;
-                    localStorage.setItem(storageKey, data.inbox.length.toString());
+                    localStorage.setItem(`moon_last_count_${user.id}`, data.inbox.length.toString());
                     setNewMailCount(0);
                 }
             };
 
             const handleSend = async (targetId, sentence) => {
-                setLoading(true);
+                setIsSubmitting(true); // 立即鎖定介面，防止亂按
                 try {
                     const response = await fetch(GAS_URL, {
                         method: "POST",
                         headers: { "Content-Type": "text/plain" },
-                        body: JSON.stringify({ 
-                            stage: user.stage, 
-                            senderID: user.id, 
-                            targetID: targetId, 
-                            sentence: sentence 
-                        })
+                        body: JSON.stringify({ stage: user.stage, senderID: user.id, targetID: targetId, sentence: sentence })
                     });
                     const result = await response.json();
                     if (result.status === "success") {
-                        showNotification("心意已成功傳遞！");
-                        fetchData(user.id, user.stage);
-                    } else {
-                        throw new Error(result.msg || "寄送失敗");
-                    }
+                        showNotification(user.stage === "5" ? "月老已收到您的悄悄話" : "心意已成功傳遞！");
+                        // 稍微延遲後重新獲取資料，確保 hasSent 同步
+                        setTimeout(() => fetchData(user.id, user.stage), 500);
+                    } else throw new Error(result.msg || "傳遞失敗");
                 } catch (err) {
                     showNotification(err.message, "error");
-                } finally {
-                    setLoading(false);
+                    setIsSubmitting(false);
                 }
             };
 
-            if (connectionError) {
-                return (
-                    <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center text-slate-200">
-                        <div className="bg-rose-900/20 p-6 rounded-full mb-6 border border-rose-500/30">
-                            <Icons.WifiOff size={48} className="text-rose-500" />
-                        </div>
-                        <h2 className="text-2xl font-bold mb-3">連線失敗</h2>
-                        <p className="text-slate-400 mb-8 max-w-xs mx-auto">連線逾時或後端異常，請重新開啟網頁。</p>
-                        <div className="bg-slate-900 border border-slate-800 rounded-lg px-6 py-3 text-sm text-slate-500">
-                            請重新開啟此網頁
-                        </div>
-                    </div>
-                );
-            }
+            if (connectionError) return (
+                <div className="min-h-screen flex flex-col items-center justify-center p-6 text-slate-200 text-center bg-slate-950">
+                    <Icons.WifiOff size={56} className="text-rose-500 mb-6 mx-auto animate-pulse" />
+                    <h2 className="text-2xl font-bold">連線失敗</h2>
+                    <p className="text-slate-400 mt-2 text-lg">請確認網路環境並重新開啟網頁</p>
+                </div>
+            );
 
-            if (loading && !isLoggedIn) {
-                return (
-                    <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden text-slate-100">
-                        <div className="heart-flight text-5xl top-[45%]">❤️</div>
-                        <div className="heart-flight text-4xl top-[55%]" style={{ animationDelay: '0.8s' }}>💌</div>
-                        <div className="z-10 mt-32 text-pink-200 font-medium tracking-widest animate-pulse flex items-center gap-2">
-                            <Icons.Sparkles size={16} /> 正在為您牽線中...
-                        </div>
+            // 心動載入動畫
+            if ((loading || isSubmitting) && !data?.hasSent) return (
+                <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden bg-romantic">
+                    <div className="heart-flight text-6xl top-[45%]">❤️</div>
+                    <div className="heart-flight text-5xl top-[55%]" style={{ animationDelay: '0.8s' }}>💌</div>
+                    <div className="heart-flight text-4xl top-[40%]" style={{ animationDelay: '1.2s' }}>💖</div>
+                    <div className="z-10 mt-32 text-pink-200 text-xl font-medium tracking-[0.2em] animate-pulse flex items-center gap-2">
+                        <Icons.Sparkles size={24} className="text-yellow-300" /> 正在為您連繫緣分...
                     </div>
-                );
-            }
+                </div>
+            );
 
-            if (!isLoggedIn) {
-                return (
-                    <div className="min-h-screen flex items-center justify-center p-4 text-slate-100">
-                        <div className="w-full max-w-md bg-white/5 backdrop-blur-xl rounded-2xl shadow-2xl overflow-hidden border border-white/10">
-                            <div className="bg-gradient-to-b from-purple-600/20 to-transparent p-8 text-center relative">
-                                <div className="relative z-10 flex flex-col items-center">
-                                    <div className="bg-gradient-to-br from-purple-500 to-pink-500 p-3 rounded-full mb-4 shadow-lg ring-4 ring-white/10">
-                                        <Icons.Moon size={40} className="text-yellow-100" />
-                                    </div>
-                                    <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-200 to-purple-200 tracking-wider">月老信箱</h1>
-                                    <p className="text-purple-200 mt-2 text-sm">連結緣分，傳遞心意</p>
-                                </div>
-                            </div>
-                            <form onSubmit={(e) => { e.preventDefault(); setLoading(true); fetchData(user.id, user.stage); }} className="p-8 space-y-6">
-                                <div className="space-y-2">
-                                    <label className="text-xs font-bold text-pink-300 uppercase tracking-wider pl-1">使用者 ID</label>
-                                    <div className="relative group">
-                                        <Icons.User className="absolute left-3 top-3 text-purple-400" size={18} />
-                                        <input 
-                                            type="text" 
-                                            value={user.id}
-                                            onChange={(e) => setUser({...user, id: e.target.value})}
-                                            placeholder="輸入您的 ID"
-                                            className="w-full bg-slate-900/80 border border-white/10 text-white pl-10 pr-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/50"
-                                        />
-                                    </div>
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-xs font-bold text-pink-300 uppercase tracking-wider pl-1">目前階段</label>
-                                    <div className="relative group">
-                                        <Icons.RefreshCw className="absolute left-3 top-3 text-purple-400" size={18} />
-                                        <input 
-                                            type="number" 
-                                            value={user.stage}
-                                            onChange={(e) => setUser({...user, stage: e.target.value})}
-                                            className="w-full bg-slate-900/80 border border-white/10 text-white pl-10 pr-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/50"
-                                        />
-                                    </div>
-                                </div>
-                                <button type="submit" className="w-full bg-gradient-to-r from-rose-500 to-purple-600 text-white font-bold py-3.5 rounded-xl shadow-lg transform active:scale-95 transition-all flex items-center justify-center gap-2">
-                                    <Icons.LogIn size={20} />
-                                    進入信箱
-                                </button>
-                            </form>
+            if (!isLoggedIn) return (
+                <div className="min-h-screen flex items-center justify-center p-4 text-slate-100">
+                    <div className="w-full max-w-md bg-white/5 backdrop-blur-xl rounded-2xl p-8 border border-white/10 text-center shadow-2xl">
+                        <Icons.Moon size={56} className="mx-auto text-yellow-200 mb-6 drop-shadow-[0_0_15px_rgba(253,224,71,0.6)]" />
+                        <h1 className="text-3xl font-black mb-8 tracking-[0.3em] text-pink-100">月老信箱</h1>
+                        <div className="space-y-5">
+                            <input type="text" value={user.id} onChange={(e) => setUser({...user, id: e.target.value})} placeholder="請輸入使用者 ID" className="w-full bg-slate-900/80 border border-white/20 text-white px-5 py-4 rounded-xl focus:ring-2 focus:ring-pink-500 outline-none" />
+                            <input type="number" value={user.stage} onChange={(e) => setUser({...user, stage: e.target.value})} placeholder="階段" className="w-full bg-slate-900/80 border border-white/20 text-white px-5 py-4 rounded-xl focus:ring-2 focus:ring-pink-500 outline-none" />
+                            <button onClick={() => {setLoading(true); fetchData(user.id, user.stage);}} className="w-full bg-gradient-to-r from-rose-500 to-purple-600 text-xl font-bold py-4 rounded-xl shadow-lg active:scale-95 transition-all mt-4 border border-white/10">進入信箱</button>
                         </div>
                     </div>
-                );
-            }
+                </div>
+            );
 
             return (
-                <div className="min-h-screen text-slate-200 pb-10">
-                    <header className="bg-slate-950/40 backdrop-blur-md sticky top-0 z-40 border-b border-white/5 shadow-sm">
-                        <div className="max-w-2xl mx-auto px-4 py-4 flex justify-between items-center">
-                            <div className="flex items-center gap-3" onClick={() => setIsLoggedIn(false)} role="button">
-                                <div className="bg-gradient-to-br from-purple-500 to-pink-600 p-2 rounded-lg">
-                                    <Icons.Moon size={20} className="text-yellow-100" />
-                                </div>
-                                <h1 className="font-bold text-lg hidden sm:block text-pink-100 tracking-wide">月老信箱</h1>
-                            </div>
-                            <div className="flex items-center gap-2 bg-white/5 backdrop-blur-sm py-1.5 px-4 rounded-full border border-white/10 shadow-inner">
-                                <span className="font-bold text-pink-100 text-lg">{data?.me?.nickname}</span>
-                                <span className="text-xl leading-none filter drop-shadow-md" role="img">{data?.me?.animal}</span>
-                            </div>
+                <div className="min-h-screen text-slate-200 pb-10 font-sans">
+                    <header className="bg-slate-950/60 backdrop-blur-lg sticky top-0 z-40 border-b border-white/10 px-4 py-5 flex justify-between items-center shadow-md">
+                        <div className="flex items-center gap-2">
+                            <Icons.Moon size={24} className="text-yellow-200" />
+                            <h1 className="font-black text-xl text-pink-100 tracking-wider">月老信箱</h1>
+                        </div>
+                        <div className="bg-pink-500/10 py-2 px-5 rounded-full border border-pink-500/20 flex items-center gap-3 shadow-inner">
+                            <span className="font-bold text-lg text-white">{data?.me?.nickname}</span>
+                            <span className="text-3xl leading-none">{data?.me?.animal.split(' ')[0]}</span>
                         </div>
                     </header>
 
-                    <main className="max-w-2xl mx-auto px-4 py-6 space-y-6">
-                        <section className="bg-white/5 backdrop-blur-md rounded-2xl shadow-xl border border-white/10 overflow-hidden relative">
-                            <div className="bg-gradient-to-r from-pink-500/10 to-purple-500/10 px-6 py-4 border-b border-white/5 flex items-center gap-2">
-                                <Icons.Send size={18} className="text-pink-300" />
-                                <h2 className="font-bold text-lg text-pink-100">傳遞心意</h2>
+                    <main className="max-w-2xl mx-auto px-4 py-8 space-y-8">
+                        <section className="bg-white/5 backdrop-blur-md rounded-[2.5rem] border border-white/10 overflow-hidden shadow-2xl">
+                            <div className="bg-white/5 px-8 py-6 border-b border-white/10 flex items-center gap-3">
+                                {user.stage === "5" ? <Icons.Lock size={24} className="text-purple-400" /> : <Icons.Send size={24} className="text-pink-300" />}
+                                <h2 className="font-bold text-2xl text-pink-50 tracking-wide">
+                                    {user.stage === "5" ? "偷偷告訴月老" : "傳遞心意"}
+                                </h2>
                             </div>
-                            <div className="p-6">
+                            <div className="p-8">
                                 {data?.hasSent ? (
-                                    <div className="text-center py-8">
-                                        <div className="bg-gradient-to-br from-green-400 to-emerald-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg shadow-green-500/30">
-                                            <Icons.CheckCircle size={32} className="text-white" />
+                                    <div className="text-center py-10 animate-fade-in">
+                                        <div className="bg-emerald-500/20 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 border border-emerald-500/30">
+                                            <Icons.CheckCircle size={48} className="text-emerald-400" />
                                         </div>
-                                        <h3 className="text-xl font-bold text-white mb-2">信件已寄出</h3>
-                                        <p className="text-pink-200/70">月老正在為您傳遞這份心意...</p>
+                                        <h3 className="text-3xl font-bold text-white mb-3 tracking-widest">已成功記錄</h3>
+                                        <p className="text-pink-200/60 text-xl font-light italic">月老正在為您守護這份緣分...</p>
                                     </div>
                                 ) : (
-                                    <LetterForm 
-                                        targets={data?.targets || []} 
-                                        sentences={data?.sentences || []} 
-                                        onSend={handleSend}
-                                        loading={loading}
-                                    />
+                                    <LetterForm stage={user.stage} targets={data?.targets || []} sentences={data?.sentences || []} onSend={handleSend} loading={isSubmitting} />
                                 )}
                             </div>
                         </section>
 
-                        <button 
-                            onClick={handleOpenInbox}
-                            className="w-full bg-white/5 hover:bg-white/10 backdrop-blur-md border border-white/10 rounded-xl p-4 flex items-center justify-between group transition-all shadow-lg active:scale-95"
-                        >
-                            <div className="flex items-center gap-3">
-                                <div className="bg-gradient-to-br from-purple-500/20 to-pink-500/20 p-2.5 rounded-lg text-pink-300 ring-1 ring-white/10">
-                                    <Icons.Mail size={24} />
-                                </div>
-                                <div className="text-left">
-                                    <div className="font-bold text-lg text-pink-100">我的收件匣</div>
-                                    <div className="text-xs text-purple-300/70">點擊查看收到的信件</div>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-3">
-                                {newMailCount > 0 && (
-                                    <div className="bg-gradient-to-r from-rose-500 to-pink-600 text-white text-xs font-bold px-3 py-1 rounded-full animate-pulse shadow-lg flex items-center gap-1">
-                                        <span className="w-1.5 h-1.5 bg-white rounded-full"></span>新信件
+                        {/* 只有階段 5 會隱藏收件匣 */}
+                        {user.stage !== "5" && (
+                            <button onClick={handleOpenInbox} className="w-full bg-white/5 border border-white/10 rounded-3xl p-6 flex items-center justify-between active:scale-[0.98] transition-all shadow-xl group">
+                                <div className="flex items-center gap-5">
+                                    <div className="bg-pink-500/20 p-4 rounded-2xl text-pink-300 ring-1 ring-white/10 group-hover:bg-pink-500/30 transition-colors shadow-sm">
+                                        <Icons.Mail size={32} />
                                     </div>
-                                )}
-                                <Icons.ChevronRight className="text-white/30 group-hover:text-white" />
-                            </div>
-                        </button>
+                                    <div className="text-left">
+                                        <div className="font-bold text-2xl text-pink-50">我的收件匣</div>
+                                        <div className="text-base text-slate-400 mt-1">點擊查看收到的心意</div>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-4">
+                                    {newMailCount > 0 && (
+                                        <div className="bg-rose-500 text-white text-sm font-bold px-4 py-1.5 rounded-full animate-pulse shadow-lg shadow-rose-900/50">
+                                            新信件
+                                        </div>
+                                    )}
+                                    <Icons.ChevronRight size={28} className="text-white/20 group-hover:text-white transition-colors" />
+                                </div>
+                            </button>
+                        )}
                     </main>
 
                     {showInbox && (
-                        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4 animate-fade-in">
-                            <div className="bg-[#1a1025] w-full max-w-lg h-[85vh] sm:h-[600px] rounded-t-2xl sm:rounded-2xl border border-white/10 shadow-2xl flex flex-col animate-slide-up overflow-hidden relative">
-                                <div className="flex items-center justify-between p-4 border-b border-white/5 bg-black/20 backdrop-blur-md">
-                                    <div className="flex items-center gap-2">
-                                        <Icons.Mail size={20} className="text-pink-400" />
-                                        <h2 className="font-bold text-lg text-pink-100">收件匣</h2>
-                                        <span className="bg-white/10 text-pink-200 text-xs px-2 py-0.5 rounded-full border border-white/5">
-                                            {data?.inbox?.length || 0}
-                                        </span>
-                                    </div>
-                                    <button onClick={() => setShowInbox(false)} className="p-2 bg-white/5 rounded-full text-white/50 hover:text-white"><Icons.X size={20} /></button>
+                        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 backdrop-blur-sm p-0 sm:p-4 animate-fade-in">
+                            <div className="bg-[#1a1025] w-full max-w-lg h-[82vh] rounded-t-[3rem] border border-white/10 flex flex-col shadow-2xl overflow-hidden animate-pop">
+                                <div className="flex items-center justify-between p-7 border-b border-white/5 bg-black/20 text-pink-100">
+                                    <h2 className="font-bold text-2xl">收件匣 ({data?.inbox?.length})</h2>
+                                    <button onClick={() => setShowInbox(false)} className="text-white/40 p-2.5 bg-white/5 rounded-full"><Icons.X size={28} /></button>
                                 </div>
-                                <div className="flex-1 overflow-y-auto p-4 space-y-3 no-scrollbar bg-black/10">
-                                    {data?.inbox?.length > 0 ? (
-                                        data.inbox.map((mail, idx) => (
-                                            <div key={idx} className="bg-white/5 border border-white/5 rounded-xl p-4 shadow-inner">
-                                                <div className="flex items-center gap-3 mb-3">
-                                                    <div className="text-2xl leading-none bg-black/30 w-10 h-10 flex items-center justify-center rounded-full shadow-inner">
-                                                        {mail.senderAnimal}
-                                                    </div>
-                                                    <div className="flex flex-col">
-                                                        <span className="text-[10px] text-pink-300/70 font-bold uppercase tracking-widest">第 {mail.stage} 關</span>
-                                                        <span className="text-sm font-bold text-pink-100">來自 {mail.senderAnimal}</span>
-                                                    </div>
-                                                </div>
-                                                <div className="bg-black/30 rounded-lg p-3 text-pink-50/90 text-sm leading-relaxed border border-white/5 shadow-inner">
-                                                    {mail.content}
-                                                </div>
+                                <div className="flex-1 overflow-y-auto p-6 space-y-5 no-scrollbar bg-black/10">
+                                    {data?.inbox?.map((mail, idx) => (
+                                        <div key={idx} className="bg-white/5 rounded-3xl p-6 border border-white/5 shadow-inner">
+                                            <div className="flex items-center justify-between mb-4 border-b border-white/5 pb-3">
+                                                <span className="text-4xl leading-none">{mail.senderAnimal.split(' ')[0]}</span>
+                                                <span className="text-[10px] text-pink-300/60 font-black tracking-widest uppercase">第 {mail.stage} 關</span>
                                             </div>
-                                        ))
-                                    ) : (
-                                        <div className="h-full flex flex-col items-center justify-center text-purple-300/50">
-                                            <Icons.Mail size={48} className="mb-4 opacity-10" />
-                                            <p>目前沒有信件</p>
+                                            <div className="text-2xl text-pink-50 leading-relaxed py-1 italic tracking-wide font-light">「{mail.content}」</div>
                                         </div>
-                                    )}
+                                    ))}
+                                    {data?.inbox?.length === 0 && <div className="h-full flex flex-col items-center justify-center text-slate-500 py-24"><Icons.Mail size={64} className="opacity-10 mb-4" /><p className="text-xl italic">尚無信件...</p></div>}
                                 </div>
-                                <div className="p-4 border-t border-white/5 sm:hidden bg-black/20">
-                                    <button onClick={() => setShowInbox(false)} className="w-full bg-white/10 text-white font-medium py-3 rounded-xl border border-white/5">關閉</button>
-                                </div>
+                                <div className="p-7 border-t border-white/5 bg-black/30"><button onClick={() => setShowInbox(false)} className="w-full bg-white/5 text-white py-5 rounded-3xl border border-white/10 font-bold text-xl">關閉收件匣</button></div>
                             </div>
                         </div>
                     )}
 
                     {notification && (
-                        <div className={`fixed bottom-6 left-1/2 -translate-x-1/2 ${notification.type === 'error' ? 'bg-rose-600' : 'bg-emerald-600'} text-white px-6 py-3 rounded-full shadow-2xl z-[60] flex items-center gap-3 border border-white/20 animate-fade-in`}>
-                            {notification.type === 'error' ? <Icons.AlertCircle size={20} /> : <Icons.CheckCircle size={20} />}
-                            <span className="font-medium tracking-wide">{notification.message}</span>
+                        <div className={`fixed bottom-10 left-1/2 -translate-x-1/2 ${notification.type === 'error' ? 'bg-rose-600' : 'bg-emerald-600'} text-white px-10 py-5 rounded-full shadow-2xl z-[100] flex items-center gap-4 animate-fade-in border border-white/20 backdrop-blur-xl`}>
+                            <Icons.CheckCircle size={28} />
+                            <span className="font-bold text-xl">{notification.message}</span>
                         </div>
                     )}
                 </div>
             );
         };
 
-        const LetterForm = ({ targets, sentences, onSend, loading }) => {
+        const LetterForm = ({ stage, targets, sentences, onSend, loading }) => {
             const [targetId, setTargetId] = useState("");
             const [sentence, setSentence] = useState("");
             const [sendMode, setSendMode] = useState('nickname'); 
+            const [confirmTarget, setConfirmTarget] = useState(null);
 
             const displayTargets = useMemo(() => {
+                if (stage === "5") return targets;
                 if (sendMode === 'nickname') return targets;
                 return [...targets].sort(() => Math.random() - 0.5);
-            }, [targets, sendMode]);
+            }, [targets, sendMode, stage]);
 
+            // === 特殊邏輯：Stage 5 (選人) ===
+            if (stage === "5") {
+                return (
+                    <div className="space-y-10 animate-fade-in">
+                        <div className="text-center px-2">
+                            <p className="text-pink-100 font-bold text-2xl italic leading-relaxed tracking-wide">
+                                「悄悄告訴月老，誰讓您最心動？」
+                            </p>
+                            <p className="text-rose-400 text-sm font-black tracking-widest uppercase mt-5 bg-rose-500/10 py-3 rounded-2xl border border-rose-500/20 italic shadow-inner">
+                                🔒 此決定只有月老知道，且不可修改 🔒
+                            </p>
+                        </div>
+                        <div className="grid grid-cols-1 gap-5">
+                            {displayTargets.map(t => (
+                                <button key={t.id} onClick={() => setConfirmTarget(t)} className="p-7 rounded-3xl border border-white/10 bg-black/40 text-left flex items-center justify-between hover:border-pink-500/50 transition-all active:scale-95 group shadow-inner">
+                                    <div className="flex items-center gap-6">
+                                        <div className="bg-white/5 p-3 rounded-full group-hover:bg-pink-500/10 transition-colors shadow-sm ring-1 ring-white/5">
+                                            <Icons.Heart size={28} className="text-pink-400" fill="currentColor" />
+                                        </div>
+                                        {/* 隱藏動物名稱，僅保留裝飾 Emoji 和假名 */}
+                                        <span className="font-bold text-2xl text-slate-50 tracking-[0.3em]">{t.nickname}</span>
+                                    </div>
+                                    <Icons.ChevronRight size={28} className="text-white/10 group-hover:text-white transition-colors" />
+                                </button>
+                            ))}
+                        </div>
+
+                        {confirmTarget && (
+                            <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/95 backdrop-blur-md animate-fade-in">
+                                <div className="bg-[#1e1b4b] border border-white/20 rounded-[2.5rem] p-10 w-full max-w-sm text-center animate-pop shadow-[0_0_60px_rgba(236,72,153,0.3)] relative overflow-hidden">
+                                    <div className="absolute top-0 left-0 w-full h-3 bg-gradient-to-r from-pink-500 via-rose-500 to-purple-600 shadow-md"></div>
+                                    <h3 className="text-3xl font-black text-white mb-5 mt-4 tracking-widest leading-snug">確認選擇<br/>{confirmTarget.nickname}？</h3>
+                                    <p className="text-slate-400 text-lg mb-10 leading-relaxed italic font-light">「此份抉擇一旦送出，便無法收回。」</p>
+                                    <div className="flex flex-col gap-4">
+                                        <button 
+                                            onClick={() => {
+                                                onSend(confirmTarget.id, "FINAL_MATCH"); 
+                                                setConfirmTarget(null);
+                                            }} 
+                                            className="w-full py-5 bg-gradient-to-r from-pink-600 to-rose-600 rounded-2xl font-black text-2xl text-white shadow-2xl active:scale-95 transition-transform order-1 ring-2 ring-white/10"
+                                        >
+                                            確認傳遞
+                                        </button>
+                                        <button onClick={() => setConfirmTarget(null)} className="w-full py-5 bg-white/5 rounded-2xl font-bold text-xl text-slate-500 hover:bg-white/10 transition-all border border-white/5 order-2 active:scale-95">再考慮一下</button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                );
+            }
+
+            // === 寫信：Stage 1~4, 6 ===
             return (
-                <div className="space-y-5">
-                    <div className="space-y-2">
-                        <label className="text-[10px] font-bold text-pink-300 uppercase tracking-widest pl-1">收件對象類型</label>
-                        <div className="flex bg-black/30 p-1 rounded-xl border border-white/10">
-                            <button onClick={() => {setSendMode('nickname'); setTargetId('');}} className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-bold transition-all ${sendMode === 'nickname' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-200'}`}><Icons.Users size={16} className="inline mr-1" />指定暱稱</button>
-                            <button onClick={() => {setSendMode('animal'); setTargetId('');}} className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-bold transition-all ${sendMode === 'animal' ? 'bg-pink-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-200'}`}><Icons.Cat size={16} className="inline mr-1" />回信給動物</button>
+                <div className="space-y-8 animate-fade-in">
+                    <div className="space-y-4">
+                        <label className="text-sm font-black text-pink-300 uppercase tracking-[0.2em] pl-2 drop-shadow-sm">收件對象類型</label>
+                        <div className="flex bg-black/40 p-1.5 rounded-3xl border border-white/10 shadow-inner">
+                            <button onClick={() => {setSendMode('nickname'); setTargetId('');}} className={`flex-1 flex items-center justify-center gap-3 py-4 rounded-2xl text-lg font-bold transition-all ${sendMode === 'nickname' ? 'bg-indigo-600 text-white shadow-xl ring-2 ring-indigo-400/20' : 'text-slate-500 hover:text-slate-300'}`}><Icons.Users size={24} />指定暱稱</button>
+                            <button onClick={() => {setSendMode('animal'); setTargetId('');}} className={`flex-1 flex items-center justify-center gap-3 py-4 rounded-2xl text-lg font-bold transition-all ${sendMode === 'animal' ? 'bg-pink-600 text-white shadow-xl ring-2 ring-pink-400/20' : 'text-slate-500 hover:text-slate-300'}`}><Icons.Cat size={24} />回信給動物</button>
                         </div>
                     </div>
-                    <div className="space-y-2">
-                        <label className="text-[10px] font-bold text-pink-300 uppercase tracking-widest pl-1">{sendMode === 'nickname' ? '選擇對象暱稱' : '選擇對方代表動物'}</label>
-                        <select value={targetId} onChange={(e) => setTargetId(e.target.value)} className="w-full bg-slate-900/90 border border-white/10 rounded-xl px-4 py-3 text-pink-50 focus:ring-1 focus:ring-pink-500/50 appearance-none">
-                            <option value="" className="text-slate-400">-- 請選擇 --</option>
-                            {displayTargets.map(t => <option key={t.id} value={t.id} className="bg-slate-900">{sendMode === 'nickname' ? t.nickname : `${t.animal} (身分未知)`}</option>)}
-                        </select>
+                    <div className="space-y-4">
+                        <label className="text-sm font-black text-pink-300 uppercase tracking-[0.2em] pl-2 drop-shadow-sm">{sendMode === 'nickname' ? '選擇對象暱稱' : '選擇對方代表動物'}</label>
+                        <div className="relative group">
+                            <select value={targetId} onChange={(e) => setTargetId(e.target.value)} className="w-full bg-slate-900/90 border border-white/20 rounded-2xl px-6 py-5 text-xl text-pink-50 focus:ring-2 focus:ring-pink-500/50 appearance-none transition-all outline-none shadow-inner">
+                                <option value="" className="text-slate-500">-- 請選擇對象 --</option>
+                                {displayTargets.map(t => <option key={t.id} value={t.id} className="bg-slate-900">{sendMode === 'nickname' ? t.nickname : `${t.animal.split(' ')[0]} (身分未知)`}</option>)}
+                            </select>
+                            <Icons.ChevronRight size={24} className="absolute right-5 top-[22px] text-slate-600 pointer-events-none rotate-90 opacity-50" />
+                        </div>
                     </div>
-                    <div className="space-y-2">
-                        <label className="text-[10px] font-bold text-pink-300 uppercase tracking-widest pl-1">選擇金句</label>
-                        <select value={sentence} onChange={(e) => setSentence(e.target.value)} className="w-full bg-slate-900/90 border border-white/10 rounded-xl px-4 py-3 text-pink-50 appearance-none">
-                            <option value="" className="text-slate-400">-- 請選擇 --</option>
-                            {sentences.map((s, i) => <option key={i} value={s} className="bg-slate-900">{s}</option>)}
-                        </select>
+                    <div className="space-y-4">
+                        <label className="text-sm font-black text-pink-300 uppercase tracking-[0.2em] pl-2 drop-shadow-sm">選擇心意金句</label>
+                        <div className="relative group">
+                            <select value={sentence} onChange={(e) => setSentence(e.target.value)} className="w-full bg-slate-900/90 border border-white/20 rounded-2xl px-6 py-5 text-xl text-pink-50 appearance-none focus:ring-2 focus:ring-pink-500/50 outline-none transition-all shadow-inner">
+                                <option value="" className="text-slate-500">-- 請選擇想說的話 --</option>
+                                {sentences.map((s, i) => <option key={i} value={s} className="bg-slate-900">{s}</option>)}
+                            </select>
+                            <Icons.ChevronRight size={24} className="absolute right-5 top-[22px] text-slate-600 pointer-events-none rotate-90 opacity-50" />
+                        </div>
                     </div>
-                    <button disabled={loading || !targetId || !sentence} onClick={() => onSend(targetId, sentence)} className="w-full mt-4 bg-gradient-to-r from-rose-500 via-pink-600 to-purple-600 text-white font-bold py-3.5 rounded-xl shadow-lg active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 border border-white/10 shadow-pink-900/40">
-                        {loading ? <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div> : <><Icons.Heart size={18} fill="currentColor" />確認寄出</>}
+                    <button disabled={loading || !targetId || !sentence} onClick={() => onSend(targetId, sentence)} className="w-full mt-8 bg-gradient-to-r from-rose-500 via-pink-600 to-purple-600 text-2xl font-black py-6 rounded-3xl shadow-2xl active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-4 border border-white/10 shadow-pink-900/40 ring-2 ring-white/5">
+                        {loading ? <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div> : <><Icons.Heart size={32} fill="currentColor" />確認寄出</>}
                     </button>
                 </div>
             );

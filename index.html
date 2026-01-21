@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🌙 月老信箱 - 診斷模式</title>
+    <title>🌙 月老信箱 - 調試模式</title>
     <!-- LINE LIFF SDK -->
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -25,20 +25,10 @@
         @keyframes pop { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
         .bg-romantic { background: radial-gradient(ellipse at top, #4c0519, #1e1b4b, #000000); }
         .no-scrollbar::-webkit-scrollbar { display: none; }
+        
+        /* 手機字體優化：調回標準大小 */
         body { font-size: 14px; -webkit-tap-highlight-color: transparent; line-height: 1.5; }
         input, select { font-size: 16px !important; }
-        
-        /* 診斷面板樣式 */
-        .debug-panel {
-            background: rgba(0, 0, 0, 0.8);
-            border: 1px solid #ff00ff;
-            color: #00ff00;
-            font-family: monospace;
-            padding: 10px;
-            font-size: 10px;
-            pointer-events: none;
-            z-index: 1000;
-        }
     </style>
 </head>
 <body class="bg-romantic min-h-screen text-slate-200 font-sans selection:bg-pink-500/30 overflow-x-hidden">
@@ -61,16 +51,16 @@
             ChevronRight: (p) => <Icon {...p}><path d="m9 18 6-6-6-6"/></Icon>,
             CheckCircle: (p) => <Icon {...p}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></Icon>,
             Lock: (p) => <Icon {...p}><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></Icon>,
-            WifiOff: (p) => <Icon {...p}><line x1="2" x2="22" y1="2" y2="22"/><path d="M8.5 8.5a5 5 0 0 1 7 7"/><path d="M2 8.5a15 15 0 0 1 15.5-15.5"/></Icon>,
+            WifiOff: (p) => <Icon {...p}><circle cx="12" cy="12" r="10"/><line x1="1" y1="1" x2="23" y2="23"/></Icon>,
             Users: (p) => <Icon {...p}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><circle cx="19" cy="4" r="3"/></Icon>,
-            Cat: (p) => <Icon {...p}><path d="M12 5c.67 0 1.35.09 2 .26 1.78-2 5.03-2.84 6.42-2.45.44 2.19-.76 3.83-1.35 4.49.33.46.56 1 .7 1.56.09.3.13.6.13.91 0 2.3-3.6 3.09-5.9 4.44-2.3 1.35-4 3.3-4 5.8"/><circle cx="9" cy="11" r="1"/><circle cx="15" cy="11" r="1"/><path d="M12 13v2"/></Icon>
+            Cat: (p) => <Icon {...p}><path d="M12 5c.67 0 1.35.09 2 .26 1.78-2 5.03-2.84 6.42-2.45.44 2.19-.76 3.83-1.35 4.49.33.46.56 1 .7 1.56.09.3.13.6.13.91 0 2.3-3.6 3.09-5.9 4.44-2.3 1.35-4 3.3-4 5.8"/></Icon>
         };
 
         const GAS_URL = "https://script.google.com/macros/s/AKfycbxy-gnJHmXgei_k68l0wN15wzaOyel6ya4LhsPj3i3yrtGgY3BsCqJ5YLBzaOn6olOV/exec";
         const LIFF_ID = "2008883582-olNPRyU9";
 
         const App = () => {
-            const [user, setUser] = useState({ id: "", stage: "" });
+            const [user, setUser] = useState({ id: "", stage: "1" });
             const [isLoggedIn, setIsLoggedIn] = useState(false);
             const [loading, setLoading] = useState(false);
             const [isSubmitting, setIsSubmitting] = useState(false);
@@ -80,12 +70,11 @@
             const [newMailCount, setNewMailCount] = useState(0);
             
             // --- 診斷專用狀態 ---
-            const [diagnosticInfo, setDiagnosticInfo] = useState({
-                liffStatus: "等待初始化",
-                urlStage: "無",
-                urlID: "無",
-                apiRawResponse: "尚未請求",
-                lastError: null
+            const [diagnostic, setDiagnostic] = useState({
+                liff: "初始化中...",
+                params: "讀取中...",
+                apiStatus: "未請求",
+                lastMsg: ""
             });
 
             const showNotification = (message, type = 'success') => {
@@ -94,31 +83,21 @@
             };
 
             const fetchData = async (userId, stage) => {
-                setDiagnosticInfo(prev => ({ ...prev, apiRawResponse: "正在請求後端..." }));
+                setDiagnostic(prev => ({ ...prev, apiStatus: `正在請求 Stage ${stage}...` }));
                 try {
                     const cleanStage = String(stage).trim();
                     const url = `${GAS_URL}?userID=${userId}&stage=${cleanStage}&t=${Date.now()}`;
                     
-                    const response = await fetch(url, {
-                        method: "GET",
-                        redirect: "follow",
-                    });
-
-                    if (!response.ok) {
-                        throw new Error(`網路錯誤: HTTP ${response.status}`);
-                    }
-
+                    const response = await fetch(url, { method: "GET", redirect: "follow" });
                     const result = await response.json();
-                    setDiagnosticInfo(prev => ({ ...prev, apiRawResponse: JSON.stringify(result, null, 2) }));
 
-                    if (result.error) {
-                        throw new Error(`後端報錯: ${result.error}`);
-                    }
+                    if (result.error) throw new Error(result.error);
                     
+                    setDiagnostic(prev => ({ ...prev, apiStatus: "請求成功", lastMsg: `收到 ${result.sentences?.length || 0} 個金句` }));
                     setData(result);
                     setIsLoggedIn(true);
                 } catch (err) {
-                    setDiagnosticInfo(prev => ({ ...prev, lastError: err.message, apiRawResponse: "請求失敗" }));
+                    setDiagnostic(prev => ({ ...prev, apiStatus: "請求失敗", lastMsg: err.message }));
                     showNotification(err.message, "error");
                 } finally {
                     setLoading(false);
@@ -136,28 +115,17 @@
                         finalStage = (params.get('stage') || params.get('Stage') || "1").trim();
                         finalID = (params.get('userID') || params.get('id') || "").trim();
 
-                        setDiagnosticInfo(prev => ({ 
-                            ...prev, 
-                            urlStage: finalStage, 
-                            urlID: finalID || "無" 
-                        }));
+                        setDiagnostic(prev => ({ ...prev, params: `ID: ${finalID || '無'}, Stage: ${finalStage}` }));
 
                         if (LIFF_ID && LIFF_ID !== "請在此填入您的LIFF_ID") {
-                            setDiagnosticInfo(prev => ({ ...prev, liffStatus: "正在載入 LIFF..." }));
                             await liff.init({ liffId: LIFF_ID });
-                            setDiagnosticInfo(prev => ({ ...prev, liffStatus: "LIFF 初始化成功" }));
-                            
+                            setDiagnostic(prev => ({ ...prev, liff: liff.isLoggedIn() ? "已登入 LINE" : "未登入 LINE" }));
                             if (liff.isLoggedIn()) {
                                 const profile = await liff.getProfile();
-                                if (profile.userId) {
-                                    finalID = profile.userId;
-                                    setDiagnosticInfo(prev => ({ ...prev, liffStatus: `LIFF 登入中 (${profile.displayName})` }));
-                                }
-                            } else {
-                                setDiagnosticInfo(prev => ({ ...prev, liffStatus: "LIFF 未登入" }));
+                                if (profile.userId) finalID = profile.userId;
                             }
                         } else {
-                            setDiagnosticInfo(prev => ({ ...prev, liffStatus: "LIFF ID 未填寫，使用純網頁模式" }));
+                            setDiagnostic(prev => ({ ...prev, liff: "純網頁模式" }));
                         }
                         
                         setUser({ id: finalID, stage: finalStage });
@@ -166,26 +134,24 @@
                             fetchData(finalID, finalStage);
                         }
                     } catch (e) { 
-                        setDiagnosticInfo(prev => ({ ...prev, liffStatus: `LIFF 錯誤: ${e.message}`, lastError: e.message }));
-                        console.error(e);
+                        setDiagnostic(prev => ({ ...prev, liff: `初始化失敗: ${e.message}` }));
                     }
                 };
                 initApp();
             }, []);
 
             useEffect(() => {
-                if (data && data.inbox && user.id) {
-                    const storageKey = `moon_diag_count_${user.id}`;
+                if (data?.inbox && user.id) {
+                    const storageKey = `moon_v7_count_${user.id}`;
                     const lastCount = parseInt(localStorage.getItem(storageKey) || '0', 10);
-                    const currentCount = data.inbox.length;
-                    setNewMailCount(currentCount > lastCount ? currentCount - lastCount : 0);
+                    setNewMailCount(data.inbox.length > lastCount ? data.inbox.length - lastCount : 0);
                 }
             }, [data, user.id]);
 
             const handleOpenInbox = () => {
                 setShowInbox(true);
-                if (data && data.inbox) {
-                    localStorage.setItem(`moon_diag_count_${user.id}`, data.inbox.length.toString());
+                if (data?.inbox) {
+                    localStorage.setItem(`moon_v7_count_${user.id}`, data.inbox.length.toString());
                     setNewMailCount(0);
                 }
             };
@@ -209,49 +175,35 @@
                 }
             };
 
-            // 載入畫面
             if ((loading || isSubmitting) && !data?.hasSent) return (
-                <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden bg-romantic text-slate-100 p-4 text-center">
-                    <div className="heart-flight text-5xl">❤️</div>
-                    <div className="heart-flight text-4xl" style={{ animationDelay: '0.8s' }}>💌</div>
+                <div className="min-h-screen flex flex-col items-center justify-center relative bg-romantic text-slate-100 p-4 text-center">
+                    <div className="heart-flight text-4xl">❤️</div>
+                    <div className="heart-flight text-3xl" style={{ animationDelay: '0.8s' }}>💌</div>
                     <div className="z-10 mt-32 text-pink-200 text-sm font-medium tracking-widest animate-pulse">正在為您連繫緣分...</div>
-                    <div className="absolute bottom-4 left-4 right-4 text-[10px] text-pink-300/40 font-mono text-left opacity-50">
-                        正在請求 Stage: {user.stage} | ID: {user.id}
-                    </div>
                 </div>
             );
 
-            // 手動登入介面
             if (!isLoggedIn) return (
                 <div className="min-h-screen flex flex-col items-center justify-center p-4">
                     <div className="w-full max-w-sm bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-white/10 text-center shadow-2xl animate-fade-in mb-6">
                         <Icons.Moon size={40} className="mx-auto text-yellow-200 mb-4" />
                         <h1 className="text-xl font-black mb-6 tracking-widest text-pink-100">月老信箱</h1>
-                        {diagnosticInfo.lastError && (
-                            <div className="bg-rose-900/40 border border-rose-500/50 text-rose-200 p-3 rounded-xl text-xs mb-4 text-left leading-relaxed">
-                                ⚠️ 偵測到問題：<br/>{diagnosticInfo.lastError}
-                            </div>
-                        )}
                         <div className="space-y-4 text-left">
                             <label className="text-[10px] text-slate-400 pl-1 uppercase font-bold tracking-widest">請輸入 ID 登入</label>
                             <input type="text" value={user.id} onChange={(e) => setUser({...user, id: e.target.value})} placeholder="User ID" className="w-full bg-slate-900/80 border border-white/20 text-white px-4 py-2.5 rounded-xl outline-none focus:ring-2 focus:ring-pink-500" />
-                            <button onClick={() => {setLoading(true); fetchData(user.id, user.stage);}} className="w-full bg-gradient-to-r from-rose-500 to-purple-600 font-bold py-3 rounded-xl shadow-lg active:scale-95 transition-all">進入信箱 (Stage {user.stage})</button>
+                            <button onClick={() => {setLoading(true); fetchData(user.id, user.stage);}} className="w-full bg-gradient-to-r from-rose-500 to-purple-600 font-bold py-3 rounded-xl shadow-lg active:scale-95 transition-all">
+                                進入信箱 (Stage {user.stage})
+                            </button>
                         </div>
                     </div>
                     
-                    {/* 診斷面板 */}
-                    <div className="w-full max-w-sm bg-black/80 rounded-xl p-4 border border-green-500/30 font-mono text-[10px] text-green-400 overflow-hidden">
-                        <div className="border-b border-green-500/20 pb-2 mb-2 flex justify-between">
-                            <span>🛠️ 系統診斷面板</span>
-                            <span className="animate-pulse">● LIVE</span>
-                        </div>
-                        <p>網址 Stage: <span className="text-white">{diagnosticInfo.urlStage}</span></p>
-                        <p>網址 ID: <span className="text-white">{diagnosticInfo.urlID}</span></p>
-                        <p>LIFF 狀態: <span className="text-white">{diagnosticInfo.liffStatus}</span></p>
-                        <p className="mt-2 text-pink-400">後端原始回傳 (API JSON):</p>
-                        <div className="bg-black p-2 mt-1 rounded h-32 overflow-y-auto border border-white/5 text-pink-200">
-                            {diagnosticInfo.apiRawResponse}
-                        </div>
+                    {/* 調試診斷資訊 */}
+                    <div className="w-full max-w-sm bg-black/60 rounded-xl p-4 border border-blue-500/30 font-mono text-[10px] text-blue-300">
+                        <p>📍 診斷面板：</p>
+                        <p className="mt-1">網址參數: <span className="text-white">{diagnostic.params}</span></p>
+                        <p>LIFF 狀態: <span className="text-white">{diagnostic.liff}</span></p>
+                        <p>API 狀態: <span className="text-white">{diagnostic.apiStatus}</span></p>
+                        <p>最近訊息: <span className="text-pink-300">{diagnostic.lastMsg}</span></p>
                     </div>
                 </div>
             );
@@ -263,9 +215,9 @@
                             <Icons.Moon size={16} className="text-yellow-200" />
                             <h1 className="font-bold text-sm text-pink-100">月老信箱</h1>
                         </div>
-                        <div className="bg-pink-500/10 py-1 px-3 rounded-full border border-pink-500/20 flex items-center gap-2 shadow-inner max-w-[60%]">
-                            <span className="font-bold text-xs truncate">{data?.me?.nickname}</span>
-                            <span className="text-lg leading-none shrink-0">{data?.me?.animal?.split(' ')[0] || '🐾'}</span>
+                        <div className="bg-pink-500/10 py-1 px-3 rounded-full border border-pink-500/20 flex items-center gap-2 shadow-inner">
+                            <span className="font-bold text-xs">{data?.me?.nickname}</span>
+                            <span className="text-lg leading-none">{data?.me?.animal?.split(' ')[0] || '🐾'}</span>
                         </div>
                     </header>
 
@@ -273,10 +225,10 @@
                         <section className="bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 overflow-hidden shadow-xl">
                             <div className="bg-white/5 px-4 py-3 border-b border-white/10 flex items-center justify-between">
                                 <div className="flex items-center gap-2">
-                                    {user.stage === "5" ? <Icons.Lock size={16} className="text-purple-300" /> : <Icons.Send size={16} className="text-pink-300" />}
-                                    <h2 className="font-bold text-sm text-pink-50">{user.stage === "5" ? "偷偷告訴月老" : "傳遞心意"}</h2>
+                                    {String(user.stage).trim() === "5" ? <Icons.Lock size={16} className="text-purple-300" /> : <Icons.Send size={16} className="text-pink-300" />}
+                                    <h2 className="font-bold text-sm text-pink-50">{String(user.stage).trim() === "5" ? "偷偷告訴月老" : "傳遞心意"}</h2>
                                 </div>
-                                <span className="text-[10px] text-pink-500/50 font-mono">Stage: {user.stage}</span>
+                                <span className="text-[10px] text-pink-500/50 font-mono">第 {user.stage} 關</span>
                             </div>
                             <div className="p-4">
                                 {data?.hasSent ? (
@@ -291,19 +243,17 @@
                             </div>
                         </section>
 
-                        {user.stage !== "5" && (
+                        {String(user.stage).trim() !== "5" && (
                             <button onClick={handleOpenInbox} className="w-full bg-white/5 border border-white/10 rounded-2xl p-3.5 flex items-center justify-between active:scale-[0.98] transition-all shadow-lg group">
                                 <div className="flex items-center gap-3">
                                     <div className="bg-pink-500/20 p-2 rounded-xl text-pink-300"><Icons.Mail size={20} /></div>
                                     <div className="text-left">
                                         <div className="font-bold text-sm text-pink-100">我的收件匣</div>
-                                        <div className="text-[10px] text-slate-400 tracking-wider font-light">點擊查看收到的心意</div>
+                                        <div className="text-[10px] text-slate-400 tracking-wider">查看收到的心意</div>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                    {newMailCount > 0 && <div className="bg-rose-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full animate-pulse">新信件</div>}
-                                    <Icons.ChevronRight size={16} className="text-white/20 group-hover:text-white" />
-                                </div>
+                                {newMailCount > 0 && <div className="bg-rose-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full animate-pulse shadow-lg">新信件</div>}
+                                <Icons.ChevronRight size={16} className="text-white/20" />
                             </button>
                         )}
                     </main>
@@ -322,24 +272,23 @@
                                                 <span className="text-2xl leading-none">{mail.senderAnimal?.split(' ')[0] || '🐾'}</span>
                                                 <span className="text-[9px] text-pink-300/40 font-bold uppercase tracking-widest px-2 py-0.5 bg-white/5 rounded">第 {mail.stage} 關</span>
                                             </div>
-                                            <div className="text-sm text-pink-50 leading-relaxed italic tracking-wide font-light">「{mail.content}」</div>
+                                            <div className="text-base text-pink-50 leading-relaxed italic tracking-wide font-light">「{mail.content}」</div>
                                         </div>
                                     ))}
                                     {data?.inbox?.length === 0 && (
                                         <div className="h-full flex flex-col items-center justify-center text-slate-500 py-16 text-center space-y-3">
                                             <Icons.Mail size={40} className="opacity-10 mx-auto" />
-                                            <p className="text-xs italic tracking-widest text-slate-600">尚無信件，靜待緣分...</p>
+                                            <p className="text-xs italic tracking-widest text-slate-600">目前尚無信件...</p>
                                         </div>
                                     )}
                                 </div>
-                                <div className="p-4 border-t border-white/5 bg-black/30"><button onClick={() => setShowInbox(false)} className="w-full bg-white/5 hover:bg-white/10 text-white py-3 rounded-2xl font-bold text-sm shadow-lg border border-white/10">關閉</button></div>
+                                <div className="p-4 border-t border-white/5 bg-black/30"><button onClick={() => setShowInbox(false)} className="w-full bg-white/5 hover:bg-white/10 text-white py-3.5 rounded-2xl font-bold text-sm shadow-lg border border-white/10">關閉</button></div>
                             </div>
                         </div>
                     )}
 
                     {notification && (
                         <div className={`fixed bottom-8 left-1/2 -translate-x-1/2 ${notification.type === 'error' ? 'bg-rose-600' : 'bg-emerald-600'} text-white px-5 py-2.5 rounded-full shadow-2xl z-[100] flex items-center gap-3 animate-fade-in border border-white/20 backdrop-blur-md`}>
-                            {notification.type === 'error' ? <Icons.WifiOff size={18} /> : <Icons.CheckCircle size={18} />}
                             <span className="font-bold text-xs tracking-wide">{notification.message}</span>
                         </div>
                     )}
@@ -353,38 +302,34 @@
             const [sendMode, setSendMode] = useState('nickname'); 
             const [confirmTarget, setConfirmTarget] = useState(null);
 
-            // 過濾並隨機排序
             const displayTargets = useMemo(() => {
                 const validOnes = targets.filter(t => t.id && String(t.id).trim() !== "" && t.nickname);
-                if (stage === "5") return validOnes;
+                // 只有 Stage 5 強制顯示暱稱 (選人模式)
+                if (String(stage).trim() === "5") return validOnes;
                 return sendMode === 'nickname' ? validOnes : [...validOnes].sort(() => Math.random() - 0.5);
             }, [targets, sendMode, stage]);
 
             // 第五階段：秘密抉擇介面
-            if (stage === "5") {
+            if (String(stage).trim() === "5") {
                 return (
                     <div className="space-y-4 animate-fade-in text-center">
                         <div className="px-2">
                             <p className="text-pink-100 font-bold text-base italic leading-relaxed tracking-wide">「誰讓您最心動？」</p>
-                            <p className="text-rose-400 text-[9px] font-black tracking-widest mt-1 bg-rose-500/10 py-1 rounded-lg border border-rose-500/20 italic">🔒 只有月老知道，不可修改 🔒</p>
+                            <p className="text-rose-400 text-[9px] font-black tracking-widest mt-1 bg-rose-500/10 py-1 rounded-lg border border-rose-500/20 italic">🔒 此決定只有月老知道，不可修改 🔒</p>
                         </div>
-                        {displayTargets.length === 0 ? (
-                            <div className="py-4 text-slate-500 italic text-xs">目前沒有符合性別的對象...</div>
-                        ) : (
-                            <div className="grid grid-cols-1 gap-2.5">
-                                {displayTargets.map(t => (
-                                    <button key={t.id} onClick={() => setConfirmTarget(t)} className="p-3.5 rounded-xl border border-white/10 bg-black/40 text-left flex items-center justify-between active:scale-[0.98] group shadow-inner transition-all">
-                                        <div className="flex items-center gap-3">
-                                            <div className="bg-white/5 p-1.5 rounded-full group-hover:bg-pink-500/10 transition-colors">
-                                                <Icons.Heart size={18} className="text-pink-400" fill="currentColor" />
-                                            </div>
-                                            <span className="font-bold text-base text-slate-100 tracking-wider">{t.nickname}</span>
+                        <div className="grid grid-cols-1 gap-2.5">
+                            {displayTargets.map(t => (
+                                <button key={t.id} onClick={() => setConfirmTarget(t)} className="p-3.5 rounded-xl border border-white/10 bg-black/40 text-left flex items-center justify-between active:scale-[0.98] group shadow-inner transition-all">
+                                    <div className="flex items-center gap-3">
+                                        <div className="bg-white/5 p-1.5 rounded-full group-hover:bg-pink-500/10 transition-colors">
+                                            <Icons.Heart size={18} className="text-pink-400" fill="currentColor" />
                                         </div>
-                                        <Icons.ChevronRight size={14} className="text-white/10 group-hover:text-white" />
-                                    </button>
-                                ))}
-                            </div>
-                        )}
+                                        <span className="font-bold text-base text-slate-100 tracking-wider">{t.nickname}</span>
+                                    </div>
+                                    <Icons.ChevronRight size={14} className="text-white/10 group-hover:text-white" />
+                                </button>
+                            ))}
+                        </div>
 
                         {confirmTarget && (
                             <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/95 backdrop-blur-md animate-fade-in">
@@ -410,7 +355,7 @@
                         <label className="text-[10px] font-black text-pink-300 uppercase tracking-widest pl-1 drop-shadow-sm">收件對象類型</label>
                         <div className="flex bg-black/40 p-1 rounded-2xl border border-white/10 shadow-inner">
                             <button onClick={() => {setSendMode('nickname'); setTargetId('');}} className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition-all ${sendMode === 'nickname' ? 'bg-indigo-600 text-white shadow-xl ring-1 ring-white/10' : 'text-slate-500'}`}><Icons.Users size={16} />指定暱稱</button>
-                            <button onClick={() => {setSendMode('animal'); setTargetId('');}} className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition-all ${sendMode === 'animal' ? 'bg-pink-600 text-white shadow-xl ring-1 ring-white/10' : 'text-slate-500'}`}><Icons.Cat size={16} />回信給屬性</button>
+                            <button onClick={() => {setSendMode('animal'); setTargetId('');}} className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition-all ${sendMode === 'animal' ? 'bg-pink-600 text-white shadow-xl ring-1 ring-white/10' : 'text-slate-500'}`}><Icons.Cat size={16} />回信屬性</button>
                         </div>
                     </div>
                     <div className="space-y-2 text-left">
@@ -432,7 +377,6 @@
                             </select>
                             <Icons.ChevronRight size={16} className="absolute right-4 top-3.5 text-slate-600 rotate-90 opacity-50 pointer-events-none" />
                         </div>
-                        {sentences.length === 0 && <p className="text-[10px] text-rose-400 pl-1 mt-1 font-mono">⚠️ 診斷: 此階段找不到任何金句</p>}
                     </div>
                     <button disabled={!targetId || !sentence} onClick={() => onSend(targetId, sentence)} className="w-full mt-2 bg-gradient-to-r from-rose-500 via-pink-600 to-purple-600 text-sm font-black py-3 rounded-xl shadow-xl active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2 border border-white/10 shadow-pink-900/40">
                         <Icons.Heart size={18} fill="currentColor" />確認寄出
